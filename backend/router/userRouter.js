@@ -2,7 +2,7 @@ const express = require("express");
 
 const router = express.Router();
 
-const { requestOtp, checkOtp, registerUser, userDetails, placeOrder, getPendingOrders, getAcceptedOrders, getRejectedOrders, getOrderDetails } = require("../controller/userController");
+const { requestOtp, checkOtp, registerUser, userDetails, placeOrder, getPendingOrders, getAcceptedOrders, getRejectedOrders, getOrderDetails, makePayment } = require("../controller/userController");
 const { authenticateUser , authenticateOtpUser } = require("../middleware/userMiddleware");
 
 router.get("/test", () => {
@@ -17,5 +17,6 @@ router.get("/pendingorders", authenticateUser, getPendingOrders)
 router.get("/acceptedorders", authenticateUser, getAcceptedOrders)
 router.get("/rejectedorders", authenticateUser, getRejectedOrders)
 router.get("/orderdetails", authenticateUser, getOrderDetails)
+router.get("/makepayment", authenticateUser, makePayment)
 
 module.exports = router

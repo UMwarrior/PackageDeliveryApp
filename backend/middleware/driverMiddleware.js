@@ -10,7 +10,6 @@ const authenticateDriver = (req, res, next) => {
       if (err) {
           return res.status(401).json({ message: 'Unauthorized - Invalid Token' });
       }
-
       if (decoded.driver !== 1 || !decoded.driverId) {
           return res.status(403).json({ message: 'Forbidden - Access Denied' });
       }

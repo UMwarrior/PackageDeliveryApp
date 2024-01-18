@@ -1,7 +1,7 @@
 const { generateUserToken, generateUserOtpToken } = require('../auth/userAuth');
 const db = require('../db/connection');
 const { sendOtp, verifyOtp } = require('../services/otpService');
-const { isValidPhoneNumber, isValidOTP, isValidZipcode } = require('../validator/validator');
+const { isValidPhoneNumber, isValidOTP, isValidZipcode, isNumeric } = require('../validator/validator');
 
 async function requestOtp(req, res) {
     const { phone } = req.body;
@@ -174,13 +174,13 @@ async function placeOrder(req, res) {
     if (!alternate_phone || !isValidPhoneNumber(alternate_phone)) {
         return res.status(400).json({ error: 'Invalid Phone' });
     }
-    if (!length || !Number.isInteger(length)) {
+    if (!length || !isNumeric(length)) {
         return res.status(400).json({ error: 'Invalid length' });
     }
-    if (!breadth || !Number.isInteger(breadth)) {
+    if (!breadth || !isNumeric(breadth)) {
         return res.status(400).json({ error: 'Invalid breadth' });
     }
-    if (!weight || !Number.isInteger(weight)) {
+    if (!weight || !isNumeric(weight)) {
         return res.status(400).json({ error: 'Invalid weight' });
     }
 
@@ -209,11 +209,13 @@ async function getPendingOrders(req, res) {
             const pendingOrders = results[0];
             const numberOfPendingOrders = results[0].length;
             res.json({ numberOfPendingOrders, pendingOrders });
+            return
         }
         else if (results[0].length == 0) {
             const pendingOrders = {};
             const numberOfPendingOrders = 0;
             res.json({ numberOfPendingOrders, pendingOrders });
+            return
         }
     } catch (error) {
         return res.status(400).json({ error });
@@ -244,7 +246,7 @@ async function getRejectedOrders(req, res) {
     const { userId } = req.body;
 
     try {
-        const results = await db.query('SELECT id FROM orders WHERE user_id = ? and status = -1', [userId])
+        const results = await db.query('SELECT id FROM orders WHERE user_id = ? and status = 3', [userId])
         if (results[0].length > 0) {
             const rejectedOrders = results[0];
             const numberOfRejectedOrders = results[0].length;
@@ -263,7 +265,7 @@ async function getRejectedOrders(req, res) {
 async function getOrderDetails(req, res) {
     const { userId, order_id } = req.body;
 
-    if (!order_id || Number.isInteger(order_id)) {
+    if (!order_id || !isNumeric(order_id)) {
         return res.status(400).json({ error: 'Invalid Order Id' });
     }
 
@@ -300,6 +302,65 @@ async function checkOrderAccess(userId, order_id) {
     }
 }
 
+async function makePayment(req, res) {
+    let { order_id ,userId } = req.body;
 
+    if (!order_id || !isNumeric(order_id)) {
+        return res.status(400).json({ error: 'Invalid Order Id' });
+    }
 
-module.exports = { requestOtp, checkOtp, registerUser, userDetails, placeOrder, getPendingOrders, getAcceptedOrders, getRejectedOrders ,getOrderDetails }
+    if (!await checkOrderAccess(userId , order_id)) {
+        return res.status(400).json({ error: 'Access Denied' });
+    }
+
+    const order_status = await orderStatusById(order_id);
+
+    if (order_status == -1) {
+        res.status(400).json({ error: "Order Id Not Found" });
+        return
+    }
+
+    if (order_status < 2) {
+        res.status(400).json({ error: "Order is Not Accepted" });
+        return
+    }
+
+    if (order_status >= 4) {
+        res.status(400).json({ error: "Payment Already Done" });
+        return
+    }
+
+    try {
+        const results = await db.query('UPDATE orders SET status = ?  WHERE id = ?', [ 4 , order_id]);
+
+        if (results[0].affectedRows > 0) {
+            res.json({ message: "Payment Done Successfully" });
+            return
+        } else {
+            res.status(400).json({ error: "Something went wrong" });
+            return
+        }
+
+    } catch (error) {
+        res.status(400).json({ error });
+        return
+    }
+}
+
+async function orderStatusById(order_id) {
+
+    try {
+        const results = await db.query('SELECT status FROM orders WHERE id = ?', [order_id])
+        if (results[0].length > 0) {
+            return results[0][0].status;
+        }
+        else if (results[0].length == 0) {
+            return -1
+        }
+    } catch (error) {
+        return -1;
+    }
+
+}
+
+module.exports = { requestOtp, checkOtp, registerUser, userDetails, placeOrder, getPendingOrders, getAcceptedOrders, getRejectedOrders ,getOrderDetails ,makePayment }

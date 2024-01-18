@@ -3,6 +3,7 @@ const bodyParser = require("body-parser");
 
 const userRouter = require("./router/userRouter");
 const driverRouter = require("./router/driverRouter");
+const adminRouter = require("./router/adminRouter");
 
 const app = express();
 
@@ -12,7 +13,7 @@ app.use(bodyParser.json());
 
 app.use("/user" , userRouter);
 app.use("/driver" , driverRouter);
-app.use("/admin" , userRouter);
+app.use("/admin" , adminRouter);
 
 app.listen(PORT , ()=>{
     console.log("Server is running on PORT :- " , PORT);

@@ -10,4 +10,8 @@ function isValidOTP(otp) {
     return /^\d{6}$/.test(otp);
 }
 
-module.exports = {isValidOTP , isValidPhoneNumber , isValidZipcode}
+function isNumeric(value) {
+    return /^-?\d+$/.test(value);
+}
+
+module.exports = {isValidOTP , isValidPhoneNumber , isValidZipcode , isNumeric}

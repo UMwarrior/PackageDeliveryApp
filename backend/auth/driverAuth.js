@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 
-const generateDriverToken = (driveId) => {
+const generateDriverToken = (driverId) => {
     const driver = 1;
-    const token = jwt.sign({ driveId, driver }, '12345678', { expiresIn: '10h' }); // Replace 'your_secret_key'
+    const token = jwt.sign({ driverId, driver }, '12345678', { expiresIn: '10h' }); // Replace 'your_secret_key'
     return token;
 };
 
